@@ -1,0 +1,10 @@
+// src/routes/auth.routes.js
+const router = require('express').Router();
+const { register, login, profile } = require('../controllers/auth.controller');
+const auth = require('../middleware/auth.middleware');
+
+router.post('/register', register);
+router.post('/login', login);
+router.get('/profile', auth, profile);
+
+module.exports = router;
