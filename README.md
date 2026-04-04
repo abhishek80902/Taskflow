@@ -48,6 +48,7 @@ This project follows production-level backend practices and is designed with sca
 * MongoDB (Mongoose)
 * JWT Authentication
 * bcrypt.js
+* Postman
 
 ### Frontend
 
