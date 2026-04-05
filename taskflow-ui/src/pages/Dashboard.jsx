@@ -1,30 +1,28 @@
 import { useEffect, useState } from "react";
 import API from "../api/axios";
 import Layout from "../components/layout/Layout";
+import TaskCard from "../components/task/TaskCard";
+import TaskModal from "../components/task/TaskModal";
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
-  const [title, setTitle] = useState("");
+  const [filters, setFilters] = useState({
+    category: "",
+    tag: "",
+  });
 
   const fetchTasks = async () => {
     try {
-      const res = await API.get("/tasks");
+      let query = "";
+
+      if (filters.category) query += `category=${filters.category}`;
+      if (filters.tag) query += `${query ? "&" : ""}tags=${filters.tag}`;
+
+      const res = await API.get(`/tasks?${query}`);
       setTasks(res.data);
     } catch (err) {
       console.log(err);
     }
-  };
-
-  const createTask = async () => {
-    if (!title) return;
-
-    await API.post("/tasks", {
-      title,
-      description: "New task",
-    });
-
-    setTitle("");
-    fetchTasks();
   };
 
   const deleteTask = async (id) => {
@@ -32,48 +30,55 @@ export default function Dashboard() {
     fetchTasks();
   };
 
+  const toggleStatus = async (task) => {
+    await API.patch(`/tasks/${task._id}`, {
+      status: task.status === "pending" ? "completed" : "pending",
+    });
+    fetchTasks();
+  };
+
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [filters]);
 
   return (
     <Layout>
-      <h1 className="text-2xl mb-6">Your Tasks</h1>
+      <h1 className="text-3xl font-semibold mb-6">Dashboard</h1>
 
-      {/* Create Task */}
-      <div className="flex gap-3 mb-6">
+      {/* CREATE TASK */}
+      <TaskModal refresh={fetchTasks} />
+
+      {/* FILTERS */}
+      <div className="flex gap-4 mb-6">
         <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter task..."
-          className="p-3 bg-gray-800 rounded w-full"
+          placeholder="Filter by category"
+          className="p-2 bg-gray-800 rounded"
+          onChange={(e) =>
+            setFilters({ ...filters, category: e.target.value })
+          }
         />
-        <button
-          onClick={createTask}
-          className="bg-indigo-600 px-5 rounded"
-        >
-          Add
-        </button>
+
+        <input
+          placeholder="Filter by tag"
+          className="p-2 bg-gray-800 rounded"
+          onChange={(e) =>
+            setFilters({ ...filters, tag: e.target.value })
+          }
+        />
       </div>
 
-      {/* Task List */}
+      {/* TASK LIST */}
       {tasks.length === 0 ? (
-        <p className="text-gray-400">No tasks yet</p>
+        <p className="text-gray-400">No tasks found</p>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-5">
           {tasks.map((task) => (
-            <div
+            <TaskCard
               key={task._id}
-              className="bg-gray-900 p-4 rounded flex justify-between"
-            >
-              <span>{task.title}</span>
-              <button
-                onClick={() => deleteTask(task._id)}
-                className="text-red-400"
-              >
-                Delete
-              </button>
-            </div>
+              task={task}
+              onDelete={deleteTask}
+              onToggle={toggleStatus}
+            />
           ))}
         </div>
       )}
